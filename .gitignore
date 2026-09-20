@@ -1,0 +1,6 @@
+.env
+naukri_profile/
+naukri_session.json
+venv/
+__pycache__/
+*.pyc

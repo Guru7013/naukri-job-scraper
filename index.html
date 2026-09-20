@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naukri Job Scraper</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            text-align: center;
+            padding-top: 100px;
+        }
+
+        .container {
+            background: white;
+            width: 400px;
+            margin: auto;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+        }
+
+        button {
+            background: #0073e6;
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #005bb5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Naukri Job Scraper</h1>
+
+        <p>Python + Playwright Job Scraping Project</p>
+
+        <p>Click below to login to Naukri.</p>
+
+        <button onclick="loginToNaukri()">
+            Login to Naukri
+        </button>
+    </div>
+
+    <script>
+        function loginToNaukri() {
+            window.open(
+                "https://www.naukri.com/",
+                "_blank"
+            );
+        }
+    </script>
+
+</body>
+</html>
