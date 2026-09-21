@@ -9,64 +9,138 @@
         body {
             font-family: Arial, sans-serif;
             background: #f4f6f8;
-            text-align: center;
-            padding-top: 100px;
+            margin: 0;
+            padding: 30px;
         }
 
-        .container {
+        .header {
             background: white;
-            width: 400px;
-            margin: auto;
-            padding: 40px;
+            padding: 25px;
+            text-align: center;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
 
         h1 {
+            margin: 0 0 10px;
             color: #333;
         }
 
-        p {
-            color: #666;
-        }
-
-        button {
+        .login-btn {
             background: #0073e6;
             color: white;
             border: none;
-            padding: 14px 30px;
+            padding: 12px 25px;
             border-radius: 6px;
             font-size: 16px;
             cursor: pointer;
         }
 
-        button:hover {
+        .login-btn:hover {
             background: #005bb5;
+        }
+
+        #jobs {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .job {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .job h2 {
+            margin-top: 0;
+            color: #222;
+        }
+
+        .job p {
+            color: #555;
+        }
+
+        .apply-btn {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 18px;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="container">
+    <div class="header">
         <h1>Naukri Job Scraper</h1>
-
         <p>Python + Playwright Job Scraping Project</p>
 
-        <p>Click below to login to Naukri.</p>
-
-        <button onclick="loginToNaukri()">
+        <button class="login-btn" onclick="loginToNaukri()">
             Login to Naukri
         </button>
     </div>
 
+    <div id="jobs">
+        <p class="loading">Loading scraped jobs...</p>
+    </div>
+
     <script>
         function loginToNaukri() {
-            window.open(
-                "https://www.naukri.com/",
-                "_blank"
-            );
+            window.open("https://www.naukri.com/", "_blank");
         }
+
+        async function loadJobs() {
+            try {
+                const response = await fetch("/api");
+
+                if (!response.ok) {
+                    throw new Error("Could not load jobs");
+                }
+
+                const data = await response.json();
+
+                const jobsContainer = document.getElementById("jobs");
+
+                if (!data.jobs || data.jobs.length === 0) {
+                    jobsContainer.innerHTML =
+                        "<p class='loading'>No jobs found.</p>";
+                    return;
+                }
+
+                jobsContainer.innerHTML = data.jobs.map(job => `
+                    <div class="job">
+                        <h2>${job.Title || "Job Title"}</h2>
+                        <p><b>Company:</b> ${job.Company || "N/A"}</p>
+                        <p><b>Location:</b> ${job.Location || "N/A"}</p>
+                        <p><b>Experience:</b> ${job.Experience || "N/A"}</p>
+                        <p><b>Skills:</b> ${job.Skills || "N/A"}</p>
+                        <p><b>Posted:</b> ${job["Posted Date"] || "N/A"}</p>
+
+                        <a class="apply-btn"
+                           href="${job["Job URL"]}"
+                           target="_blank">
+                            Open Job
+                        </a>
+                    </div>
+                `).join("");
+
+            } catch (error) {
+                document.getElementById("jobs").innerHTML =
+                    "<p class='loading'>Unable to load jobs.</p>";
+            }
+        }
+
+        loadJobs();
     </script>
 
 </body>
