@@ -1,17 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
     <title>Naukri Job Scraper</title>
 
     <style>
+
         body {
             font-family: Arial, sans-serif;
             background: #f4f6f8;
             margin: 0;
-            padding: 30px;
+            padding: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
         }
 
         h1 {
@@ -19,148 +29,333 @@
             color: #222;
         }
 
-        .top {
-            text-align: center;
-            margin-bottom: 30px;
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
-        button {
-            background: #0073e6;
-            color: white;
+        .search-box input,
+        .search-box select {
+            padding: 12px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        .search-box button {
+            padding: 12px 20px;
+            margin: 5px;
             border: none;
-            padding: 12px 25px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
+            background: #007bff;
+            color: white;
+            font-size: 15px;
         }
 
-        button:hover {
-            background: #005bb5;
+        .search-box button:hover {
+            background: #0056b3;
         }
 
-        #jobs {
-            max-width: 1000px;
-            margin: auto;
+        #jobCount {
+            font-weight: bold;
+            margin: 15px 0;
         }
 
-        .job {
+        .job-card {
             background: white;
-            margin-bottom: 15px;
             padding: 20px;
+            margin-bottom: 15px;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        .job h2 {
-            color: #0073e6;
+        .job-card h2 {
             margin-top: 0;
+            color: #007bff;
         }
 
-        .job p {
+        .job-card p {
             margin: 8px 0;
-            color: #555;
         }
 
-        .job a {
+        .job-card a {
             display: inline-block;
             margin-top: 10px;
+            padding: 10px 15px;
             background: #28a745;
             color: white;
-            padding: 8px 15px;
             text-decoration: none;
             border-radius: 5px;
         }
 
-        #status {
-            text-align: center;
-            margin: 20px;
-            font-weight: bold;
+        .job-card a:hover {
+            background: #1e7e34;
         }
+
+        .no-jobs {
+            text-align: center;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+        }
+
     </style>
+
 </head>
 
 <body>
 
-    <h1>🚀 Naukri Job Scraper</h1>
+<div class="container">
 
-    <div class="top">
-        <p>Python + Playwright Job Scraping Project</p>
+    <h1>🔎 Naukri Job Scraper</h1>
 
-        <button onclick="loginToNaukri()">
-            Login to Naukri
+    <div class="search-box">
+
+        <input
+            type="text"
+            id="keyword"
+            placeholder="Job Title / Skill"
+        >
+
+        <input
+            type="text"
+            id="location"
+            placeholder="Location"
+        >
+
+        <select id="experience">
+
+            <option value="">All Experience</option>
+            <option value="0">0 Years</option>
+            <option value="1">1 Year</option>
+            <option value="2">2 Years</option>
+            <option value="3">3 Years</option>
+            <option value="4">4 Years</option>
+            <option value="5">5 Years</option>
+
+        </select>
+
+        <button onclick="searchJobs()">
+            Search
         </button>
+
+        <button onclick="showAllJobs()">
+            Show All
+        </button>
+
     </div>
 
-    <div id="status">
+    <div id="jobCount">
         Loading jobs...
     </div>
 
     <div id="jobs"></div>
 
-    <script>
+</div>
 
-        function loginToNaukri() {
-            window.open(
-                "https://www.naukri.com/",
-                "_blank"
+
+<script>
+
+let allJobs = [];
+
+
+async function loadJobs() {
+
+    try {
+
+        const response = await fetch("/api");
+
+        const data = await response.json();
+
+        allJobs = data.jobs || [];
+
+        displayJobs(allJobs);
+
+    }
+
+    catch (error) {
+
+        document.getElementById("jobs").innerHTML =
+            "<div class='no-jobs'>Unable to load jobs.</div>";
+
+        console.log(error);
+    }
+}
+
+
+function displayJobs(jobs) {
+
+    const jobsContainer =
+        document.getElementById("jobs");
+
+    const count =
+        document.getElementById("jobCount");
+
+    count.innerText =
+        "Total Jobs: " + jobs.length;
+
+
+    if (jobs.length === 0) {
+
+        jobsContainer.innerHTML =
+            "<div class='no-jobs'>No jobs found.</div>";
+
+        return;
+    }
+
+
+    jobsContainer.innerHTML = "";
+
+
+    jobs.forEach(function(job) {
+
+        const card =
+            document.createElement("div");
+
+        card.className = "job-card";
+
+
+        card.innerHTML = `
+
+            <h2>${job.Title || "N/A"}</h2>
+
+            <p>
+                <strong>Company:</strong>
+                ${job.Company || "N/A"}
+            </p>
+
+            <p>
+                <strong>Location:</strong>
+                ${job.Location || "N/A"}
+            </p>
+
+            <p>
+                <strong>Experience:</strong>
+                ${job.Experience || "N/A"}
+            </p>
+
+            <p>
+                <strong>Skills:</strong>
+                ${job.Skills || "N/A"}
+            </p>
+
+            <p>
+                <strong>Posted:</strong>
+                ${job["Posted Date"] || "N/A"}
+            </p>
+
+            <a
+                href="${job["Job URL"] || "#"}"
+                target="_blank">
+                View Job
+            </a>
+
+        `;
+
+        jobsContainer.appendChild(card);
+
+    });
+
+}
+
+
+function searchJobs() {
+
+    const keyword =
+        document.getElementById("keyword")
+        .value
+        .toLowerCase()
+        .trim();
+
+
+    const location =
+        document.getElementById("location")
+        .value
+        .toLowerCase()
+        .trim();
+
+
+    const experience =
+        document.getElementById("experience")
+        .value
+        .trim();
+
+
+    const filteredJobs =
+        allJobs.filter(function(job) {
+
+            const title =
+                String(job.Title || "")
+                .toLowerCase();
+
+            const company =
+                String(job.Company || "")
+                .toLowerCase();
+
+            const jobLocation =
+                String(job.Location || "")
+                .toLowerCase();
+
+            const skills =
+                String(job.Skills || "")
+                .toLowerCase();
+
+            const jobExperience =
+                String(job.Experience || "")
+                .toLowerCase();
+
+
+            const keywordMatch =
+                !keyword ||
+                title.includes(keyword) ||
+                company.includes(keyword) ||
+                skills.includes(keyword);
+
+
+            const locationMatch =
+                !location ||
+                jobLocation.includes(location);
+
+
+            const experienceMatch =
+                !experience ||
+                jobExperience.includes(experience);
+
+
+            return (
+                keywordMatch &&
+                locationMatch &&
+                experienceMatch
             );
-        }
 
-        async function loadJobs() {
+        });
 
-            try {
 
-                const response = await fetch("/api");
+    displayJobs(filteredJobs);
+}
 
-                const data = await response.json();
 
-                const jobsContainer = document.getElementById("jobs");
+function showAllJobs() {
 
-                document.getElementById("status").innerText =
-                    "Total Jobs: " + data.total_jobs;
+    document.getElementById("keyword").value = "";
 
-                jobsContainer.innerHTML = "";
+    document.getElementById("location").value = "";
 
-                data.jobs.forEach((job, index) => {
+    document.getElementById("experience").value = "";
 
-                    const jobDiv = document.createElement("div");
+    displayJobs(allJobs);
+}
 
-                    jobDiv.className = "job";
 
-                    jobDiv.innerHTML = `
-                        <h2>${index + 1}. ${job["Title"] || "No Title"}</h2>
+loadJobs();
 
-                        <p><b>Company:</b> ${job["Company"] || "N/A"}</p>
-
-                        <p><b>Location:</b> ${job["Location"] || "N/A"}</p>
-
-                        <p><b>Experience:</b> ${job["Experience"] || "N/A"}</p>
-
-                        <p><b>Skills:</b> ${job["Skills"] || "N/A"}</p>
-
-                        <p><b>Posted:</b> ${job["Posted Date"] || "N/A"}</p>
-
-                        <a href="${job["Job URL"]}" target="_blank">
-                            View Job
-                        </a>
-                    `;
-
-                    jobsContainer.appendChild(jobDiv);
-
-                });
-
-            } catch (error) {
-
-                document.getElementById("status").innerText =
-                    "Unable to load jobs.";
-
-                console.error(error);
-            }
-        }
-
-        loadJobs();
-
-    </script>
+</script>
 
 </body>
+
 </html>

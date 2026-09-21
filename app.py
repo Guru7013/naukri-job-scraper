@@ -1,96 +1,51 @@
-from flask import Flask, render_template_string
+from flask import Flask, send_file, jsonify, request
 from playwright.sync_api import sync_playwright
+import pandas as pd
 import threading
-import time
 import os
+import time
 
 app = Flask(__name__)
 
 PROFILE_DIR = "naukri_profile"
+EXCEL_FILE = "naukri_jobs.xlsx"
 
-HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Naukri Job Scraper</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 100px;
-            background: #f5f5f5;
-        }
+# -----------------------------------
+# Read jobs from Excel
+# -----------------------------------
 
-        .box {
-            background: white;
-            width: 500px;
-            margin: auto;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        }
+def get_jobs():
 
-        h1 {
-            color: #333;
-        }
+    if not os.path.exists(EXCEL_FILE):
+        return []
 
-        p {
-            color: #555;
-        }
+    try:
+        df = pd.read_excel(EXCEL_FILE)
+        df = df.fillna("")
 
-        button {
-            background: #0073e6;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
+        return df.to_dict(orient="records")
 
-        button:hover {
-            background: #005bb5;
-        }
+    except Exception as e:
 
-        .status {
-            margin-top: 25px;
-            font-size: 18px;
-            color: #333;
-        }
-    </style>
-</head>
+        print("Excel Error:", e)
 
-<body>
+        return []
 
-<div class="box">
 
-    <h1>Naukri Job Scraper</h1>
-
-    <p>Click the button to open Naukri using your saved login.</p>
-
-    <form action="/login" method="post">
-        <button type="submit">Login to Naukri</button>
-    </form>
-
-    <div class="status">
-        {{ message }}
-    </div>
-
-</div>
-
-</body>
-</html>
-"""
-
+# -----------------------------------
+# Open Naukri using saved profile
+# -----------------------------------
 
 def open_naukri():
 
     try:
 
         if not os.path.exists(PROFILE_DIR):
-            print("ERROR: Naukri profile not found.")
+
+            print("Naukri profile not found.")
             print("Please run save_session.py first.")
+
             return
 
         playwright = sync_playwright().start()
@@ -100,7 +55,11 @@ def open_naukri():
             headless=False
         )
 
-        page = context.pages[0] if context.pages else context.new_page()
+        page = (
+            context.pages[0]
+            if context.pages
+            else context.new_page()
+        )
 
         page.goto(
             "https://www.naukri.com/",
@@ -110,26 +69,101 @@ def open_naukri():
 
         page.wait_for_timeout(5000)
 
-        print("Naukri opened using saved browser profile.")
-        print("Your saved login session is being used.")
+        print("Naukri opened successfully.")
+        print("Saved login profile is being used.")
 
-        # Keep browser open
         while True:
+
             time.sleep(5)
 
     except Exception as e:
 
-        print("Error:", e)
+        print("Naukri Error:", e)
 
+
+# -----------------------------------
+# Home page
+# -----------------------------------
 
 @app.route("/")
 def home():
 
-    return render_template_string(
-        HTML,
-        message="Ready. Click the button to open Naukri."
-    )
+    return send_file("index.html")
 
+
+# -----------------------------------
+# Jobs API
+# -----------------------------------
+
+@app.route("/api")
+def api_jobs():
+
+    jobs = get_jobs()
+
+    keyword = request.args.get(
+        "keyword",
+        ""
+    ).strip().lower()
+
+    location = request.args.get(
+        "location",
+        ""
+    ).strip().lower()
+
+    filtered_jobs = []
+
+    for job in jobs:
+
+        title = str(
+            job.get("Title", "")
+        ).lower()
+
+        company = str(
+            job.get("Company", "")
+        ).lower()
+
+        job_location = str(
+            job.get("Location", "")
+        ).lower()
+
+        skills = str(
+            job.get("Skills", "")
+        ).lower()
+
+        keyword_match = True
+
+        location_match = True
+
+        if keyword:
+
+            keyword_match = (
+                keyword in title
+                or keyword in company
+                or keyword in skills
+            )
+
+        if location:
+
+            location_match = (
+                location in job_location
+            )
+
+        if keyword_match and location_match:
+
+            filtered_jobs.append(job)
+
+    return jsonify({
+
+        "total_jobs": len(filtered_jobs),
+
+        "jobs": filtered_jobs
+
+    })
+
+
+# -----------------------------------
+# Login / Open Naukri
+# -----------------------------------
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -141,16 +175,51 @@ def login():
 
     thread.start()
 
-    return render_template_string(
-        HTML,
-        message="Naukri opened using your saved login session."
-    )
+    return jsonify({
 
+        "message":
+        "Naukri opened using saved login session."
+
+    })
+
+
+# -----------------------------------
+# Start Flask server
+# -----------------------------------
 
 if __name__ == "__main__":
 
+    print()
+
+    print("=" * 60)
+    print("             NAUKRI JOB SCRAPER")
+    print("=" * 60)
+
+    print(
+        "Excel File:",
+        EXCEL_FILE
+    )
+
+    print(
+        "Profile:",
+        PROFILE_DIR
+    )
+
+    print(
+        "Website:",
+        "http://127.0.0.1:5000"
+    )
+
+    print("=" * 60)
+
+    print()
+
     app.run(
+
         host="0.0.0.0",
+
         port=5000,
+
         debug=False
+
     )
