@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Naukri Job Scraper</title>
 
     <style>
@@ -13,31 +14,27 @@
             padding: 30px;
         }
 
-        .header {
-            background: white;
-            padding: 25px;
-            text-align: center;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        }
-
         h1 {
-            margin: 0 0 10px;
-            color: #333;
+            text-align: center;
+            color: #222;
         }
 
-        .login-btn {
+        .top {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
             background: #0073e6;
             color: white;
             border: none;
             padding: 12px 25px;
             border-radius: 6px;
-            font-size: 16px;
             cursor: pointer;
+            font-size: 16px;
         }
 
-        .login-btn:hover {
+        button:hover {
             background: #005bb5;
         }
 
@@ -48,99 +45,121 @@
 
         .job {
             background: white;
-            padding: 20px;
             margin-bottom: 15px;
+            padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .job h2 {
+            color: #0073e6;
             margin-top: 0;
-            color: #222;
         }
 
         .job p {
+            margin: 8px 0;
             color: #555;
         }
 
-        .apply-btn {
+        .job a {
             display: inline-block;
+            margin-top: 10px;
             background: #28a745;
             color: white;
+            padding: 8px 15px;
             text-decoration: none;
-            padding: 10px 18px;
-            border-radius: 6px;
+            border-radius: 5px;
         }
 
-        .loading {
+        #status {
             text-align: center;
-            font-size: 18px;
+            margin: 20px;
+            font-weight: bold;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="header">
-        <h1>Naukri Job Scraper</h1>
+    <h1>🚀 Naukri Job Scraper</h1>
+
+    <div class="top">
         <p>Python + Playwright Job Scraping Project</p>
 
-        <button class="login-btn" onclick="loginToNaukri()">
+        <button onclick="loginToNaukri()">
             Login to Naukri
         </button>
     </div>
 
-    <div id="jobs">
-        <p class="loading">Loading scraped jobs...</p>
+    <div id="status">
+        Loading jobs...
     </div>
 
+    <div id="jobs"></div>
+
     <script>
+
         function loginToNaukri() {
-            window.open("https://www.naukri.com/", "_blank");
+            window.open(
+                "https://www.naukri.com/",
+                "_blank"
+            );
         }
 
         async function loadJobs() {
-            try {
-                const response = await fetch("/api");
 
-                if (!response.ok) {
-                    throw new Error("Could not load jobs");
-                }
+            try {
+
+                const response = await fetch("/api");
 
                 const data = await response.json();
 
                 const jobsContainer = document.getElementById("jobs");
 
-                if (!data.jobs || data.jobs.length === 0) {
-                    jobsContainer.innerHTML =
-                        "<p class='loading'>No jobs found.</p>";
-                    return;
-                }
+                document.getElementById("status").innerText =
+                    "Total Jobs: " + data.total_jobs;
 
-                jobsContainer.innerHTML = data.jobs.map(job => `
-                    <div class="job">
-                        <h2>${job.Title || "Job Title"}</h2>
-                        <p><b>Company:</b> ${job.Company || "N/A"}</p>
-                        <p><b>Location:</b> ${job.Location || "N/A"}</p>
-                        <p><b>Experience:</b> ${job.Experience || "N/A"}</p>
-                        <p><b>Skills:</b> ${job.Skills || "N/A"}</p>
+                jobsContainer.innerHTML = "";
+
+                data.jobs.forEach((job, index) => {
+
+                    const jobDiv = document.createElement("div");
+
+                    jobDiv.className = "job";
+
+                    jobDiv.innerHTML = `
+                        <h2>${index + 1}. ${job["Title"] || "No Title"}</h2>
+
+                        <p><b>Company:</b> ${job["Company"] || "N/A"}</p>
+
+                        <p><b>Location:</b> ${job["Location"] || "N/A"}</p>
+
+                        <p><b>Experience:</b> ${job["Experience"] || "N/A"}</p>
+
+                        <p><b>Skills:</b> ${job["Skills"] || "N/A"}</p>
+
                         <p><b>Posted:</b> ${job["Posted Date"] || "N/A"}</p>
 
-                        <a class="apply-btn"
-                           href="${job["Job URL"]}"
-                           target="_blank">
-                            Open Job
+                        <a href="${job["Job URL"]}" target="_blank">
+                            View Job
                         </a>
-                    </div>
-                `).join("");
+                    `;
+
+                    jobsContainer.appendChild(jobDiv);
+
+                });
 
             } catch (error) {
-                document.getElementById("jobs").innerHTML =
-                    "<p class='loading'>Unable to load jobs.</p>";
+
+                document.getElementById("status").innerText =
+                    "Unable to load jobs.";
+
+                console.error(error);
             }
         }
 
         loadJobs();
+
     </script>
 
 </body>
