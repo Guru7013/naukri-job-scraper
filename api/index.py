@@ -8,34 +8,42 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
 
-        excel_file = "naukri_jobs.xlsx"
-
-        jobs = []
-
         try:
-            if os.path.exists(excel_file):
-                df = pd.read_excel(excel_file)
+            file_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "naukri_jobs.xlsx"
+            )
 
-                df = df.fillna("")
+            df = pd.read_excel(file_path)
 
-                jobs = df.to_dict(orient="records")
+            df = df.fillna("")
+
+            jobs = df.to_dict(orient="records")
+
+            data = {
+                "total_jobs": len(jobs),
+                "jobs": jobs
+            }
+
+            body = json.dumps(data, default=str).encode("utf-8")
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+
+            self.wfile.write(body)
 
         except Exception as e:
-            print("Error reading Excel:", e)
 
-        data = {
-            "project": "Naukri Job Scraper",
-            "status": "Deployed successfully",
-            "technology": "Python + Playwright",
-            "total_jobs": len(jobs),
-            "jobs": jobs
-        }
+            body = json.dumps({
+                "error": str(e),
+                "total_jobs": 0,
+                "jobs": []
+            }).encode("utf-8")
 
-        body = json.dumps(data).encode("utf-8")
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
 
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-
-        self.wfile.write(body)
+            self.wfile.write(body)
